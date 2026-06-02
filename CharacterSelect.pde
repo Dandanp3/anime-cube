@@ -1,13 +1,21 @@
+/**
+ * CharacterSelect.pde
+ * Tela de seleção entre Luffy e Johnny Joestar.
+ * Cada card mostra o cubo do personagem + companion se houver.
+ */
 class CharacterSelect {
 
   final float CARD_W = 260, CARD_H = 380;
   final float GAP    = 60;
   float cardLX, cardJX, cardY;
 
+  float cardHX;  // Hakari card X
+
   CharacterSelect() {
-    float totalW = CARD_W * 2 + GAP;
+    float totalW = CARD_W * 3 + GAP * 2;
     cardLX = SCREEN_W / 2.0 - totalW / 2.0;
     cardJX = cardLX + CARD_W + GAP;
+    cardHX = cardJX + CARD_W + GAP;
     cardY  = SCREEN_H / 2.0 - CARD_H / 2.0 - 20;
   }
 
@@ -25,8 +33,10 @@ class CharacterSelect {
     boolean hoverL = isHover(cardLX);
     boolean hoverJ = isHover(cardJX);
 
+    boolean hoverH = isHoverCard(cardHX);
     drawLuffyCard(cardLX, cardY, hoverL);
     drawJohnnyCard(cardJX, cardY, hoverJ);
+    drawHakariCard(cardHX, cardY, hoverH);
 
     fill(120, 120, 120);
     textSize(11);
@@ -153,16 +163,59 @@ class CharacterSelect {
            mouseY > cardY && mouseY < cardY + CARD_H;
   }
 
+  boolean isHoverCard(float cx) { return isHover(cx); }
+
   boolean isHoverBtn(float cx) {
     return mouseX > cx + 30 && mouseX < cx + CARD_W - 30 &&
            mouseY > cardY + CARD_H - 60 && mouseY < cardY + CARD_H - 24;
   }
 
-  // Retorna CHAR_LUFFY, CHAR_JOHNNY ou -1
+  // Retorna CHAR_LUFFY, CHAR_JOHNNY, CHAR_HAKARI ou -1
   int getClickedChar(int mx, int my) {
     if (mx > cardLX && mx < cardLX + CARD_W && my > cardY && my < cardY + CARD_H) return CHAR_LUFFY;
     if (mx > cardJX && mx < cardJX + CARD_W && my > cardY && my < cardY + CARD_H) return CHAR_JOHNNY;
+    if (mx > cardHX && mx < cardHX + CARD_W && my > cardY && my < cardY + CARD_H) return CHAR_HAKARI;
     return -1;
+  }
+
+
+  void drawHakariCard(float cx, float cy, boolean hover) {
+    drawCardBase(cx, cy, hover, color(40, 200, 80));
+
+    float mx = cx + CARD_W / 2.0;
+    rectMode(CENTER);
+
+    // Jaqueta preta
+    fill(25, 25, 30);
+    rect(mx, cy + 110, 54, 54, 6);
+    // Capuz
+    fill(40, 40, 50);
+    triangle(mx - 27, cy + 83, mx + 27, cy + 83, mx, cy + 72);
+    // Calça marrom
+    fill(120, 80, 40);
+    rect(mx, cy + 125, 54, 22, 2);
+    // Cabelo loiro
+    fill(230, 210, 120);
+    rect(mx, cy + 83, 48, 9, 3);
+    rect(mx + 8, cy + 76, 12, 8, 2);
+    // Olhos
+    fill(50, 40, 30);
+    ellipse(mx - 9, cy + 107, 5, 5);
+    ellipse(mx + 9, cy + 107, 5, 5);
+    // Botão
+    fill(150, 130, 100);
+    ellipse(mx, cy + 116, 5, 5);
+    // Aura verde decorativa
+    noFill();
+    for (int i = 2; i > 0; i--) {
+      stroke(50, 255, 100, 50 * i);
+      strokeWeight(i * 2);
+      ellipse(mx, cy + 110, 64 + i * 8, 64 + i * 8);
+    }
+    noStroke();
+
+    drawCardLabel(cx, cy, "HAKARI", "Idle Death Gamble", "M1: Combo  Fervor: 777");
+    rectMode(CORNER);
   }
 
   // Desenha uma estrela simples com N pontas

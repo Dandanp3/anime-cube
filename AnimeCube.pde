@@ -1,10 +1,37 @@
-
+/**
+ * ANIME CUBE
+ * Engine: Processing (Java Mode)
+ *
+ * ARQUIVOS:
+ *   AnimeCube.pde       -> Setup, Draw, Input global, helpers globais
+ *   CharacterSelect.pde -> Tela de seleção de personagem
+ *   GameManager.pde     -> Waves, vidas, upgrade screen, HUD, boss
+ *   Enemy.pde           -> Inimigo normal e Boss
+ *   Particle.pde        -> Partículas de impacto, fogo, stun
+ *
+ *   -- LUFFY --
+ *   LuffyPlayer.pde     -> Luffy: movimento, Haki, Gear 2
+ *   ArmAttack.pde       -> Braço elástico, barrage
+ *
+ *   -- JOHNNY --
+ *   JohnnyPlayer.pde    -> Johnny + Tusk: tiro, stun, ricochet, ultimate
+ *   NailShot.pde        -> Projétil do Johnny (unha giratória)
+ *   TuskCompanion.pde   -> Cubo do Tusk ao lado do Johnny + ultimate
+ *
+ * ESTRUTURA DE PASTAS:
+ *   data/luffySounds/gomuSound.mp3
+ *   data/luffySounds/hakiSound.mp3
+ *   data/johnnySounds/JohnnyUltimate.mp3
+ *   data/hakariSounds/ryokiTenkai.mp3
+ *   data/hakariSounds/tucaDonka.mp3
+ *   music.mp3
+ */
 
 import processing.sound.*;
 
 // Constantes globais
-final int   SCREEN_W       = 900;
-final int   SCREEN_H       = 650;
+final int   SCREEN_W       = 1200;
+final int   SCREEN_H       = 800;
 final float DEFENSE_LINE_Y = SCREEN_H - 70;
 final int   BASE_LIVES     = 5;
 
@@ -15,6 +42,7 @@ int appState = -1;
 // Personagem escolhido
 final int CHAR_LUFFY  = 0;
 final int CHAR_JOHNNY = 1;
+final int CHAR_HAKARI  = 2;
 int chosenChar = CHAR_LUFFY;
 
 // Instâncias principais
@@ -22,6 +50,7 @@ GameManager     gm;
 CharacterSelect charSelect;
 LuffyPlayer     luffyPlayer;
 JohnnyPlayer    johnnyPlayer;
+HakariPlayer    hakariPlayer;
 
 // Referência genérica para o player ativo (interface simulada via duck typing)
 // Usamos Object e fazemos cast quando necessário
@@ -35,7 +64,7 @@ SoundManager soundManager;
 ArrayList<Particle> particles;
 
 void setup() {
-  size(900, 650);
+  size(1200, 800);
   frameRate(60);
   noStroke();
   textFont(createFont("Courier New Bold", 20));
@@ -95,6 +124,7 @@ void mousePressed() {
     case GameManager.STATE_PLAYING:
       if (chosenChar == CHAR_LUFFY)  luffyPlayer.triggerAttack();
       if (chosenChar == CHAR_JOHNNY) johnnyPlayer.triggerAttack();
+      if (chosenChar == CHAR_HAKARI)  hakariPlayer.triggerAttack();
       break;
     case GameManager.STATE_UPGRADE:
       gm.handleUpgradeClick(mouseX, mouseY);
@@ -109,6 +139,9 @@ void mousePressed() {
 void mouseReleased() {
   if (mouseButton == LEFT && chosenChar == CHAR_LUFFY && luffyPlayer != null) {
     luffyPlayer.stopBarrage();
+  }
+  if (mouseButton == LEFT && chosenChar == CHAR_HAKARI && hakariPlayer != null) {
+    // no barrage release needed for Hakari
   }
 }
 
@@ -132,18 +165,22 @@ void keyPressed() {
   if (chosenChar == CHAR_JOHNNY) {
     if (key == 'g' || key == 'G') johnnyPlayer.activateUltimate();
   }
+  // Hakari has no key activation (domain triggers via fervor bar)
 }
 
 // Inicializa o player do personagem escolhido
 void initPlayer(int charId) {
   float cx = SCREEN_W / 2.0;
   float cy = SCREEN_H / 2.0;
+  luffyPlayer  = null;
+  johnnyPlayer = null;
+  hakariPlayer = null;
   if (charId == CHAR_LUFFY) {
-    luffyPlayer  = new LuffyPlayer(cx, cy);
-    johnnyPlayer = null;
-  } else {
+    luffyPlayer = new LuffyPlayer(cx, cy);
+  } else if (charId == CHAR_JOHNNY) {
     johnnyPlayer = new JohnnyPlayer(cx, cy);
-    luffyPlayer  = null;
+  } else if (charId == CHAR_HAKARI) {
+    hakariPlayer = new HakariPlayer(cx, cy);
   }
 }
 

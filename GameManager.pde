@@ -66,11 +66,19 @@ class GameManager {
       luffyPlayer.gear2Duration = 600;
       luffyPlayer.gear2Cooldown = 0;
     }
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null) {
+      hakariPlayer.baseDamage   = 2;
+      hakariPlayer.damageLevel  = 0;
+      hakariPlayer.fervor       = 0;
+      hakariPlayer.jackpotChance = 0.3;
+      hakariPlayer.fervorRate   = 1.0;
+    }
     if (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) {
-      johnnyPlayer.baseDamage    = 10;
+      johnnyPlayer.baseDamage     = 10;
       johnnyPlayer.shotCooldownMax = 90;
-      johnnyPlayer.stunDuration  = 60;
-      johnnyPlayer.tusk.act      = 1;
+      johnnyPlayer.stunDuration   = 60;
+      johnnyPlayer.tuskLevel      = 0;
+      johnnyPlayer.tusk.act       = 1;
     }
   }
 
@@ -82,11 +90,16 @@ class GameManager {
   void updateUpgrade() {
     if (chosenChar == CHAR_LUFFY  && luffyPlayer  != null) luffyPlayer.update();
     if (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) johnnyPlayer.update(enemies);
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null) hakariPlayer.update(enemies);
   }
 
   void updatePlaying() {
     if (chosenChar == CHAR_LUFFY  && luffyPlayer  != null) luffyPlayer.update();
     if (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) johnnyPlayer.update(enemies);
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null) hakariPlayer.update(enemies);
+
+    // Pausar update de inimigos durante expansao de dominio
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null && hakariPlayer.isDomainActive()) return;
 
     // Spawn
     if (enemiesToSpawn > 0) {
@@ -108,8 +121,9 @@ class GameManager {
     if (bossWarningTimer > 0) bossWarningTimer--;
 
     // Atualiza inimigos
-    float px = (chosenChar == CHAR_LUFFY && luffyPlayer != null)  ? luffyPlayer.x
+    float px = (chosenChar == CHAR_LUFFY  && luffyPlayer  != null) ? luffyPlayer.x
              : (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) ? johnnyPlayer.x
+             : (chosenChar == CHAR_HAKARI && hakariPlayer != null) ? hakariPlayer.x
              : SCREEN_W / 2.0;
 
     for (int i = enemies.size() - 1; i >= 0; i--) {
@@ -121,6 +135,7 @@ class GameManager {
         lives -= e.isBoss ? 2 : 1;
         if (chosenChar == CHAR_LUFFY  && luffyPlayer  != null) luffyPlayer.triggerHitFlash();
         if (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) johnnyPlayer.triggerHitFlash();
+        if (chosenChar == CHAR_HAKARI && hakariPlayer != null) hakariPlayer.triggerHitFlash();
         spawnImpactParticles(e.x, DEFENSE_LINE_Y, color(255, 50, 50));
         if (lives <= 0) { state = STATE_GAMEOVER; return; }
         continue;
@@ -166,6 +181,7 @@ class GameManager {
     for (Enemy e : enemies) e.draw();
     if (chosenChar == CHAR_LUFFY  && luffyPlayer  != null) luffyPlayer.draw();
     if (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) johnnyPlayer.draw();
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null) hakariPlayer.draw();
     drawHUD();
     drawPowerHUD();
     if (bossWarningTimer > 0) {
@@ -189,6 +205,7 @@ class GameManager {
   void drawPowerHUD() {
     if (chosenChar == CHAR_LUFFY && luffyPlayer != null) drawLuffyHUD();
     if (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) drawJohnnyHUD();
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null) hakariPlayer.drawHUD();
   }
 
   void drawLuffyHUD() {
@@ -290,6 +307,7 @@ class GameManager {
 
     if (chosenChar == CHAR_LUFFY  && luffyPlayer  != null) luffyPlayer.draw();
     if (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) johnnyPlayer.draw();
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null) hakariPlayer.draw();
 
     fill(140, 140, 140); textSize(12);
     text("Clique num card para escolher", SCREEN_W/2.0, SCREEN_H - 40);
@@ -320,6 +338,24 @@ class GameManager {
 
   void drawUpgradeIcon(int uType, float ix, float iy) {
     rectMode(CENTER);
+    if (chosenChar == CHAR_HAKARI) {
+      switch(uType) {
+        case 0:  // Probability - 3 rolos com 7
+          fill(30, 20, 40); rect(ix, iy, 80, 50, 6);
+          fill(255, 220, 0); textSize(26); textAlign(CENTER, CENTER);
+          text("7 7 7", ix, iy + 8); break;
+        case 1:  // Fever Rate - barra verde
+          fill(40, 40, 40); rect(ix, iy, 70, 18, 4);
+          fill(50, 255, 100); rect(ix - 10, iy, 50, 18, 4);
+          fill(255); textSize(10); text("FERVOR", ix, iy + 1); break;
+        case 2:  // Dano - punho com aura verde
+          fill(25, 25, 30); rect(ix, iy, 40, 40, 5);
+          noFill();
+          for (int i = 2; i > 0; i--) { stroke(50,255,100, 60*i); strokeWeight(i*2); ellipse(ix,iy,55+i*6,55+i*6); }
+          noStroke(); break;
+      }
+      rectMode(CORNER); noStroke(); textAlign(LEFT,BASELINE); return;
+    }
     if (chosenChar == CHAR_LUFFY) {
       switch (uType) {
         case 0: fill(255, 204, 153); rect(ix, iy, 44, 44, 6);
@@ -354,6 +390,13 @@ class GameManager {
   }
 
   String upgradeName(int t) {
+    if (chosenChar == CHAR_HAKARI) {
+      switch(t) {
+        case 0: return "PROBABILITY SHIFT";
+        case 1: return "FEVER RATE";
+        case 2: return hakariPlayer != null && hakariPlayer.damageLevel >= 5 ? "DANO MAX" : "DANO / COMBO";
+      }
+    }
     if (chosenChar == CHAR_LUFFY) {
       switch(t) {
         case 0: return "AUMENTO DE DANO";
@@ -362,7 +405,7 @@ class GameManager {
       }
     } else {
       switch(t) {
-        case 0: return johnnyPlayer != null && johnnyPlayer.tusk.act >= 4 ? "TUSK MAX" : "EVOLUIR TUSK";
+        case 0: return johnnyPlayer != null && johnnyPlayer.tusk.act >= 4 && johnnyPlayer.tuskLevel >= 9 ? "TUSK MAX" : "EVOLUIR TUSK";
         case 1: return "STUN APRIMORADO";
         case 2: return "TIRO MAIS RAPIDO";
       }
@@ -371,6 +414,14 @@ class GameManager {
   }
 
   String upgradeDesc(int t) {
+    if (chosenChar == CHAR_HAKARI) {
+      switch(t) {
+        case 0: return "+10% chance de 777";
+        case 1: return "+20% vel. de fervor";
+        case 2: return hakariPlayer != null && hakariPlayer.damageLevel >= 5
+                        ? "Dano maximo atingido" : "+1 dano  (Nv5=Portas)";
+      }
+    }
     if (chosenChar == CHAR_LUFFY) {
       switch(t) {
         case 0: return "+1 de dano base por soco";
@@ -379,8 +430,12 @@ class GameManager {
       }
     } else {
       switch(t) {
-        case 0: return johnnyPlayer != null && johnnyPlayer.tusk.act >= 4
-                       ? "Tusk ja no maximo" : "Tusk sobe 1 Act";
+        case 0: {
+          if (johnnyPlayer == null) return "";
+          int nextAct = 1 + ((johnnyPlayer.tuskLevel + 1) / 3);
+          boolean maxed = johnnyPlayer.tusk.act >= 4 && johnnyPlayer.tuskLevel >= 9;
+          return maxed ? "Tusk ja no maximo" : ("Nivel " + (johnnyPlayer.tuskLevel+1) + " | +dano" + (nextAct > johnnyPlayer.tusk.act ? " | ACT " + min(nextAct,4) + "!" : ""));
+        }
         case 1: return "+0.2s de stun";
         case 2: return "-0.2s de cooldown";
       }
@@ -389,6 +444,14 @@ class GameManager {
   }
 
   String upgradeDesc2(int t) {
+    if (chosenChar == CHAR_HAKARI) {
+      if (hakariPlayer == null) return "";
+      switch(t) {
+        case 0: return "Chance atual: " + (int)(hakariPlayer.jackpotChance*100) + "%";
+        case 1: return "Rate atual: x" + nf(hakariPlayer.fervorRate, 1, 1);
+        case 2: return "Nv: " + hakariPlayer.damageLevel + "/5";
+      }
+    }
     if (chosenChar == CHAR_LUFFY) {
       switch(t) {
         case 0: return "";
@@ -406,6 +469,13 @@ class GameManager {
   }
 
   String upgradeStatus(int t) {
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null) {
+      switch(t) {
+        case 0: return "Chance: " + (int)(hakariPlayer.jackpotChance*100) + "%";
+        case 1: return "Rate: x" + nf(hakariPlayer.fervorRate,1,1);
+        case 2: return "Dano: " + hakariPlayer.baseDamage + "  Nv: " + hakariPlayer.damageLevel;
+      }
+    }
     if (chosenChar == CHAR_LUFFY && luffyPlayer != null) {
       switch(t) {
         case 0: return "Dano: " + luffyPlayer.baseDamage;
@@ -414,7 +484,12 @@ class GameManager {
       }
     } else if (chosenChar == CHAR_JOHNNY && johnnyPlayer != null) {
       switch(t) {
-        case 0: return johnnyPlayer.tusk.act >= 4 ? "MAXIMO" : "Act " + johnnyPlayer.tusk.act + " → " + (johnnyPlayer.tusk.act+1);
+        case 0: {
+          if (johnnyPlayer.tuskLevel >= 9) return "Act 4 | Nivel MAX";
+          int lvl = johnnyPlayer.tuskLevel;
+          int nextActAt = ((lvl / 3) + 1) * 3;
+          return "Act " + johnnyPlayer.tusk.act + " | Nv " + lvl + " (" + (nextActAt - lvl) + " p/ Act " + min(johnnyPlayer.tusk.act+1,4) + ")";
+        }
         case 1: return "Stun: " + nf(johnnyPlayer.stunDuration/60.0,1,1) + "s";
         case 2: return "CD: " + nf(johnnyPlayer.shotCooldownMax/60.0,1,1) + "s";
       }
@@ -437,6 +512,19 @@ class GameManager {
   }
 
   void applyUpgrade(int uType) {
+    if (chosenChar == CHAR_HAKARI && hakariPlayer != null) {
+      switch(uType) {
+        case 0: hakariPlayer.jackpotChance = min(0.9, hakariPlayer.jackpotChance + 0.10); break;
+        case 1: hakariPlayer.fervorRate   += 0.20; break;
+        case 2:
+          if (hakariPlayer.damageLevel < 5) {
+            hakariPlayer.damageLevel++;
+            hakariPlayer.baseDamage++;
+          }
+          break;
+      }
+      return;
+    }
     if (chosenChar == CHAR_LUFFY && luffyPlayer != null) {
       switch(uType) {
         case 0: luffyPlayer.baseDamage++; break;

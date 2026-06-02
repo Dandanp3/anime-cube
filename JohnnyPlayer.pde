@@ -1,3 +1,14 @@
+/**
+ * JohnnyPlayer.pde — Johnny Joestar
+ *
+ * Aparência: cubo azul-acinzentado com estrelas (ref: roupa do Johnny)
+ * Companion: TuskCompanion ao lado direito
+ *
+ * Upgrades disponíveis (gerenciados pelo GameManager):
+ *   0 = Evoluir Tusk (+1 act, mais dano, troca visual)
+ *   1 = Aumentar tempo de stun (+0.2s por upgrade)
+ *   2 = Reduzir cooldown do tiro (-0.2s, mínimo 0.5s)
+ */
 class JohnnyPlayer {
 
   final float W = 34, H = 34;
@@ -12,14 +23,17 @@ class JohnnyPlayer {
   // Tiro
   ArrayList<NailShot> shots = new ArrayList<NailShot>();
   float shotCooldown      = 0;
-  float shotCooldownMax   = 90;   // 1.5s em frames (60fps)
+  float shotCooldownMax   = 120;   // 2s em frames (60fps)
   final float COOLDOWN_MIN = 30;   // 0.5s mínimo
 
   // Stun
   float stunDuration = 60;   // 1s base em frames
 
   // Dano base
-  int baseDamage = 3;
+  int baseDamage = 1;
+
+  // Nível do Tusk (act muda a cada 3 níveis: 3->act2, 6->act3, 9->act4)
+  int tuskLevel = 0;
 
   // Companion
   TuskCompanion tusk;
@@ -124,8 +138,11 @@ class JohnnyPlayer {
 
   // Chamado pelo GameManager ao aplicar upgrade
   void upgradeTusk() {
-    if (tusk.act < 4) tusk.act++;
+    tuskLevel++;
     baseDamage++;
+    // Act evolui a cada 3 níveis: nível 3->act2, 6->act3, 9->act4
+    int newAct = 1 + (tuskLevel / 3);
+    tusk.act = min(newAct, 4);
   }
 
   void upgradeStun() {

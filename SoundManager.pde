@@ -1,13 +1,22 @@
+/**
+ * SoundManager.pde
+ * Carrega e expõe todos os sons do jogo.
+ * Inicializado no setup() do sketch principal.
+ */
 class SoundManager {
 
   SoundFile gomuSound;
   SoundFile hakiSound;
   SoundFile johnnyUltimate;
+  SoundFile hakariRyoki;
+  SoundFile hakariJackpot;
 
   SoundManager(PApplet app) {
     gomuSound       = load(app, "data/luffySounds/gomuSound.mp3");
     hakiSound       = load(app, "data/luffySounds/hakiSound.mp3");
     johnnyUltimate  = load(app, "data/johnnySounds/JohnnyUltimate.mp3");
+    hakariRyoki     = load(app, "data/hakariSounds/ryokiTenkai.mp3");
+    hakariJackpot   = load(app, "data/hakariSounds/tucaDonka.mp3");
   }
 
   SoundFile load(PApplet app, String path) {

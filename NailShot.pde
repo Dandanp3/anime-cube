@@ -1,3 +1,12 @@
+/**
+ * NailShot.pde — Projétil do Johnny (unha giratória)
+ *
+ * Tipos de comportamento por Act do Tusk:
+ *   Act 1: voa em linha reta, stuna 1 inimigo, para
+ *   Act 2: stuna + ricocheteia 1 vez no inimigo mais próximo
+ *   Act 3: stuna + ricocheteia 2 vezes
+ *   Act 4: atravessa TODOS em linha reta + ricocheteia 2x nos mais próximos não atingidos
+ */
 class NailShot {
 
   float x, y;
@@ -93,8 +102,18 @@ class NailShot {
       if (!e.isAlive()) continue;
       if (hasHit(e))    continue;
 
-      float d = dist(x, y, e.x, e.y);
-      if (d < e.SIZE / 2 + 6) {
+      // Hitbox: verifica só sobreposição no eixo X (tiro vertical, pierce reto)
+      // Act 4 usa AABB estreito; acts 1/2/3 usam colisão circular normal
+      boolean hit;
+      if (tuskAct == 4) {
+        float shotR = 6;
+        hit = abs(x - e.x) < (e.SIZE / 2 + shotR) &&
+              abs(y - e.y) < (e.SIZE / 2 + shotR);
+      } else {
+        float d = dist(x, y, e.x, e.y);
+        hit = d < e.SIZE / 2 + 6;
+      }
+      if (hit) {
         hitEnemies.add(e);
         boolean killed = e.takeDamage(damage);
         if (!killed) e.applyStun(stunFrames);
